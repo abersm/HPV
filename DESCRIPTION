@@ -1,0 +1,34 @@
+Package: HPV
+Title: R package for the HPV project
+Version: 1.0.0
+Authors@R: 
+    person("Michael", "Abers", , "abersm@gmail.com", role = c("aut", "cre"))
+Description: Tools to analyze and visualize data on vaccine efficacy and safety for the HPV project.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Depends: 
+    R (>= 3.5)
+Imports:
+    bslib,
+    dplyr,
+    DT,
+    ggplot2,
+    grDevices,
+    htmltools,
+    legendry,
+    meta,
+    openxlsx,
+    patchwork,
+    plotly,
+    rhandsontable,
+    rlang,
+    scales,
+    shiny,
+    stats,
+    tidyr,
+    utils
+Suggests:
+    devtools
+LazyData: true

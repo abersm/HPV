@@ -1,0 +1,26 @@
+{
+    "id": "6DF66D33",
+    "path": "~/Desktop/R packages/HPV/R/shiny_module_meta.R",
+    "project_path": "R/shiny_module_meta.R",
+    "type": "r_source",
+    "hash": "2286766222",
+    "contents": "",
+    "dirty": false,
+    "created": 1777481895434.0,
+    "source_on_save": false,
+    "relative_order": 2,
+    "properties": {
+        "source_window_id": "",
+        "Source": "Source",
+        "cursorPosition": "601,84",
+        "scrollLine": "588"
+    },
+    "folds": "",
+    "lastKnownWriteTime": 1777495705,
+    "encoding": "UTF-8",
+    "collab_server": "",
+    "source_window": "",
+    "last_content_update": 1777495705615,
+    "read_only": false,
+    "read_only_alternatives": []
+}

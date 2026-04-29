@@ -1,0 +1,291 @@
+#' Namespacing function
+#'
+#' Rewritten version of `shiny::NS`
+#' @param namespace Character vector indicating namespace. If `NULL` (default), output is equivalent to `identity`
+#' @param sep Separator between namespace and id entered as input to namespacing function returned by `NS`. Enter as length 1 character vector. Default is `"-"`
+#' @returns Function that accepts id as length 1 character vector as input
+#' @noRd
+NS <- function(namespace = NULL, sep = "-") {
+  force(sep)
+  prefix_empty <- length(namespace) == 0L
+  ns_prefix <- if (prefix_empty) character(0) else paste(namespace, collapse = sep)
+  function(id) {
+    if (length(id) == 0L) return(ns_prefix)
+    if (prefix_empty) return(id)
+    paste(ns_prefix, id, sep = sep)
+  }
+}
+
+# Standard UI inputs ------------------------------------------------------
+
+#' Custom vertical break (i.e. horizontal line that serves as divider between vertically adjacent UI elements)
+#'
+#' @param color Color of line. Enter as color name or hexadecimal code. If `color = NULL`, invisible line used
+#' @param thickness Line thickness in pixels. Default is `"1px"`
+#' @param linetype Linetype. Options: `"solid"` (default), `"dashed"`, `"dotted"`. Only relevant when `type = "hr"`
+#' @param ... Arguments passed to `shiny::hr`
+#' @returns shiny.tag object. Enter as input to UI
+#' @noRd
+vert_break <- function(color = "black", thickness = "1px", linetype = "solid", ...) {
+  shiny::tag("hr", list(style = sprintf("border: %s %s double %s;", thickness, linetype, color), ...), .noWS = NULL, .renderHook = NULL)
+}
+
+#' Switch input
+#'
+#' @param inputId Input id
+#' @param label Switch label
+#' @param on_color,off_color Switch color in on and off state, respectively. Can enter as color name, hexadecimal code, or HTML code (i.e. `"rgba(r, g, b, a)"`). Enter as string
+#' @param height,width Switch height and width in pixels, respectively
+#' @param value If `FALSE` (default), switch is initialized in off state
+#' @param disabled If `TRUE`, switch is initialized in disabled state
+#' @param border_radius Radius for switch. Default is `"2em"`
+#' @param right_align If `TRUE`, switch and label will be right aligned. Default is `FALSE`
+#' @returns shiny.tag object. Enter as input to UI of shiny app. Must use bootstrap 5 theme. In server, `input$inputId` is `TRUE` when switch is on and `FALSE` when switch is off
+#' @noRd
+switchInput <- function(
+    inputId = "switch",
+    label = "",
+    on_color = "#246A87",
+    off_color = "#BFBFBF",
+    height = "16px",
+    width = "32px",
+    value = FALSE,
+    disabled = FALSE,
+    border_radius = "2em",
+    right_align = FALSE,
+    ...) {
+  on_color <- col2hex(on_color)
+  svg_circle <- function(color) {
+    color <- if (startsWith(color, "#")) {
+      gsub("#", "%23", color, fixed = TRUE)
+    } else if (startsWith(color, "rgb")) {
+      color
+    } else {
+      gsub("#", "%23", col2hex(color), fixed = TRUE)
+    }
+    paste0("url(\"data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'><circle r='3' fill='", color, "'/></svg>\")")
+  }
+  css_code <- sprintf("
+  .form-switch .form-check-input {
+    height:%s;
+    width:%s;
+    border-radius:%s;
+  }
+  .form-switch .form-check-input:focus {
+    border-color:%s;
+    outline:0;
+    box-shadow:0 0 0 0 rgba(0, 0, 0, 0);
+    background-image:%s;
+  }
+  .form-switch .form-check-input:checked {
+    background-color:%s;
+    border-color:%s;
+    border:none;
+    background-image:%s
+  }",
+                      height, width, border_radius,
+                      off_color, svg_circle(off_color),
+                      on_color, on_color, svg_circle("white"))
+
+  toggle_switch <- shiny::tags$input(
+    class = "form-check-input",
+    type = "checkbox",
+    id = inputId
+  )
+  if (value) {
+    toggle_switch$attribs$checked <- NA
+  }
+  if (disabled) {
+    toggle_switch$attribs$disabled <- NA
+  }
+  switch_class <- "form-check form-switch"
+  if (right_align) {
+    switch_class <- paste(switch_class, "form-check-reverse")
+  }
+  shiny::div(
+    shiny::singleton(shiny::tags$head(shiny::tags$style(shiny::HTML(css_code)))),
+    shiny::div(
+      class = "form-group shiny-input-container",
+      shiny::div(
+        class = switch_class,
+        toggle_switch,
+        label,
+        ...
+        # Removed below
+        #shiny::tags$label(
+        #  class = "form-check-label",
+        #  `for` = inputId,
+        #  label
+        #)
+      )
+    )
+  )
+}
+
+#' Button to increase numeric value in increments
+#'
+#' Functionality from shinyinvoer package
+#' @param button_color Background color of buttons. Default is `"#DFDFDF"`
+#' @param button_text_color Color of plus and minus icons on buttons. Default chooses between black and white based on input to `button_color`
+#' @param button_style CSS style elements for buttons (other than background color and text color)
+#' @param valuebox_style CSS style elements for valuebox (other than font size)
+#' @param border_color Color of button and valuebox outlines. Enter `NULL` to remove. Default is `"#333333"`
+#' @param font_size Font size for number in pixels. Default is `16`
+#' @param label_style Style elements applied to label. Default is `"font-size:1em"`
+#' @returns shiny.tag object. Enter as input to UI of shiny app
+#' @noRd
+incrementorInput <- function(
+    inputId,
+    label = NULL,
+    value = NULL,
+    min = NULL,
+    max = NULL,
+    step = 1,
+    button_color = "#DFDFDF",
+    button_text_color = NULL,
+    button_style = NULL,
+    border_color = "#333333",
+    valuebox_style = NULL,
+    font_size = 16,
+    label_style = "font-size:1em") {
+  button_color <- col2hex(button_color)
+  button_text_color <- if (is.null(button_text_color)) .clr_text(button_color) else col2hex(button_text_color)
+  button_style <- paste0(sprintf("background-color:%s;color:%s;", button_color, button_text_color), button_style)
+  if (is.numeric(font_size)) {
+    font_size <- sprintf("%ipx", font_size)
+  }
+  valuebox_style <- paste0(sprintf("font-size:%s;", font_size), valuebox_style)
+  if (!is.null(border_color)) {
+    border_color <- col2hex(border_color)
+    button_style <- paste0(button_style, sprintf("border: 1px solid %s;", border_color))
+    valuebox_style <- paste0(valuebox_style, sprintf("border-color:%s;", border_color))
+  }
+  input <- shiny::tags$div(
+    class = "incrementor",
+    id = inputId,
+    shiny::tags$label(label, style = label_style),
+    shiny::tags$div(
+      class = "incrementor-control",
+      shiny::tags$button(
+        id = "step-down",
+        shiny::icon("minus", verify_fa = FALSE),
+        style = button_style
+      ),
+      shiny::tags$input(
+        type = "number",
+        min = min,
+        max = max,
+        value = value,
+        step = step,
+        style = valuebox_style
+      ),
+      shiny::tags$button(
+        id = "step-up",
+        shiny::icon("plus", verify_fa = FALSE),
+        style = button_style
+      )
+    )
+  )
+  dependency <- htmltools::htmlDependency(
+    name = "incrementor",
+    version = utils::packageVersion("HPV"),
+    package = "HPV",
+    src = "assets",
+    stylesheet = "css/incrementor.css",
+    script = "js/incrementor.js"
+  )
+  htmltools::attachDependencies(input, dependency)
+}
+
+#' Update value of incrementor button
+#'
+#' @rdname incrementorInput
+#' @param session Shiny session
+#' @param inputId Input id for `incrementorInput`
+#' @param value Updated value. Enter as length 1 numeric
+#' @returns UI updated. Enter in server function
+#' @export
+updateIncrementor <- function(session = shiny::getDefaultReactiveDomain(), inputId, value = NULL) {
+  z <- list(value = value)
+  z <- z[lengths(z, use.names = FALSE) != 0L]
+  session$sendInputMessage(inputId, z)
+}
+
+#' Add tooltip to UI element
+#'
+#' @noRd
+add_tooltip <- function(obj, text, position = "auto", ...) {
+  shiny::tagList(
+    shiny::tagAppendAttributes(
+      obj,
+      title = shiny::HTML(as.character(text)),
+      `data-bs-toggle` = "tooltip",
+      `data-bs-html` = "true",
+      `data-bs-placement` = position,
+      ...
+    )
+  )
+}
+
+#' Popover button
+#'
+#' @param ... Components to appear in popover upon trigger. Arguments passed to `bslib::popover`
+#' @param icon Icon to display (clicking icon will trigger popover)
+#' @param icon_color Color of `icon`. Default is `"white"`
+#' @param color Color of circle popover button that contains `icon` inside. Default is `"#00498F"`
+#' @param hover_text Text to display when hovering over `icon`. Default is empty (`""`)
+#' @param title Title for popover card. Default is blank (`""`)
+#' @param id_popover Popover id
+#' @param id_btn Button id
+#' @returns Enter as element in UI
+#' @export
+popover_btn <- function(
+    ...,
+    icon = NULL,
+    icon_color = "white",
+    color = "#00498F",
+    hover_text = "",
+    title = "",
+    id_popover = NULL,
+    id_btn = NULL) {
+  btn <- shiny::tags$button(
+    type = "button",
+    `data-val` = NULL,
+    class = "btn action-button",
+    style = sprintf("width:30px;height:30px;text-align:center;padding:2px 0;font-size:18px;line-height:50%%;border-radius:30px;outline:none;color:%s;background:%s;", icon_color, color),
+    shiny::tags$span(icon)
+  )
+  if (!is.null(id_btn)) {
+    btn$attribs$id <- id_btn
+  }
+  js_popover <- shiny::tags$head(
+    shiny::tags$script(
+      shiny::HTML(
+        "$(document).ready(function () {",
+        "  $('body').on('click', function (e) {",
+        "    $('[data-bs-toggle=popover]').each(function () {",
+        "      if (!$(this).is(e.target) &&",
+        "          $(this).has(e.target).length === 0 &&",
+        "          $('.popover').has(e.target).length === 0) {",
+        "        $(this).popover('hide');",
+        "      }",
+        "    });",
+        "  });",
+        "})"
+      )
+    )
+  )
+  js_close_btn_white <- shiny::tags$head(shiny::tags$script(shiny::HTML("$(document).ready(function() {
+  $('.btn-close').addClass('btn-close-white');
+});")))
+  css_popover <- shiny::tags$head(shiny::tags$style(shiny::HTML(sprintf(".popover{border-color: %s;}.popover-header{background-color: %s;color:%s;}.popover .btn-close{--bs-btn-close-opacity:1;}", color, color, "white"))))
+  btn <- shiny::tagList(shiny::tagAppendAttributes(btn, title = shiny::HTML(hover_text), `data-bs-toggle` = "tooltip", `data-bs-html` = "true", `data-bs-placement` = "auto"), js_close_btn_white, css_popover, js_popover)
+    #btn <- shiny::tagList(shiny::tagAppendAttributes(btn, title = shiny::HTML(hover_text), `data-bs-toggle` = "tooltip", `data-bs-html` = "true", `data-bs-placement` = "auto"))
+  bslib::popover(
+    title = title,
+    trigger = btn,
+    placement = "right",
+    id = id_popover,
+    ...
+  )
+}

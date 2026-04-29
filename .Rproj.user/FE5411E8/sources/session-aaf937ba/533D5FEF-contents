@@ -1,0 +1,53 @@
+p <- meta |>
+  prepare_meta_analysis_data(
+    study_design = "Cohort",
+    outcome = "CIN3+",
+    follow_up = "Long-term",
+    age_at_vax = "Any"
+  ) |>
+  plot_rr(
+    x_axis_scale = "log2", x_axis_breaks = 2^(-4L:4L), x_axis_labels = c("0.0625", "0.125", "0.25", "0.5", "1", "2", "4", "8", "16"), x_axis_title = "Risk ratio"
+    #x_axis_scale = "log2", x_axis_breaks = 2^(-4L:4L), x_axis_labels = -4L:4L, x_axis_title = "log2 risk ratio"
+    #x_axis_scale = "log10", x_axis_breaks = 10^(-2L:2L), x_axis_labels = 10^(-2L:2L), x_axis_title = "Risk ratio"
+  )
+
+p <- meta |>
+  prepare_meta_analysis_data(
+    study_design = "Cohort",
+    outcome = "CIN3+",
+    follow_up = "Long-term",
+    age_at_vax = "Any"
+  ) |>
+  plot_rr(
+    x_axis_scale = "log10",
+    x_axis_breaks = 10^(-2L:1L),
+    x_axis_labels = 10^(-2L:1L),
+    x_axis_title = "Risk ratio"
+  )
+
+
+
+x_limits <- range(get_plot_axis_breaks(p[[2L]], axis = "x"), na.rm = TRUE)
+#x_limits <- get_plot_axis_limits(p[[2L]], axis = "x", units = "data")
+x_limits <- get_plot_axis_trans(p[[2L]])$x$inverse(x_limits)
+x_min <- x_limits[1L]
+x_max <- x_limits[2L]
+nudge <- 0.01
+nudge <- (x_max - x_min)*nudge
+key <- legendry::key_range_manual(
+  #start = c(x_min, 1 + nudge),
+  #end   = c(1 - nudge, x_max),
+  #start = c(0, 1 + nudge),
+  #end   = c(1 - nudge, Inf),
+  start = c(1 - nudge, 1 + nudge),
+  end   = c(0, Inf),
+  name  = c("Favors\nvaccination", "Favors\ncontrol")
+)
+
+p1 <- p
+#key <- legendry::primitive_bracket(key)
+key <- legendry::primitive_bracket(key, oob = "squish")
+key <- ggplot2::guides(x.sec = key)
+p1[[2L]] <- p1[[2L]] + key
+#p1[[2L]] <- p1[[2L]] + ggplot2::theme(legendry.bracket = ggplot2::element_line(arrow = grid::arrow()))
+p1
