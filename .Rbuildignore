@@ -1,5 +1,4 @@
-^.*\.Rproj$
+^VIP\.Rproj$
 ^\.Rproj\.user$
-^\.positai$
-^\.claude$
+^data-raw$
 ^LICENSE\.md$
