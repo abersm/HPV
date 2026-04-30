@@ -506,6 +506,7 @@ metaAnalysisUI2 <- function(
     ),
     #abers::debug_editorUI(id = ns("debug")),
     shiny::selectInput(
+      width = "300px",
       inputId = ns("analysis_selected"),
       label = "Select meta-analysis",
       choices = meta_options

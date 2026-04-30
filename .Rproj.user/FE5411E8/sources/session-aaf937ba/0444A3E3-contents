@@ -1,7 +1,0 @@
-#' Raw data from meta-analysis
-#'
-#' @format Data frame
-#' \describe{
-#'   \item{id}{Analysis id}
-#'   }
-"meta"

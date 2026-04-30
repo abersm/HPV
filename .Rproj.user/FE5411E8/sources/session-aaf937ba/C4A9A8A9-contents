@@ -1,8 +1,0 @@
-#' Raw data from meta-analysis
-#'
-#' See data_final.R file, then run usethis::use_data(meta, overwrite = TRUE)
-#' @format Data frame
-#' \describe{
-#'   \item{id}{Analysis id}
-#'   }
-"meta"
