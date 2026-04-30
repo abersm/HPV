@@ -16,6 +16,7 @@
 #' @param slider_color Color for slider and switch
 #' @param id_export_plot_btn ID for export plot button. Default is `"export_plot_btn"`
 #' @returns Enter as input to UI
+#' @export
 metaAnalysisUI2 <- function(
     id,
     data,
@@ -524,7 +525,7 @@ metaAnalysisUI2 <- function(
     #  ns = ns
     #),
     #shiny::tag("hr", list(style = "border:0.5px solid black;opacity:0.8;"), .noWS = NULL, .renderHook = NULL),
-    switchInput(ns("show_heterogeneity"), label = shiny::tags$strong("Show heterogeneity", style = sprintf("color:%s;", primary_color)), value = FALSE, on_color = primary_color)
+    switchInput(ns("show_heterogeneity"), label = shiny::tags$strong("Show heterogeneity", style = sprintf("color:%s;", primary_color)), value = TRUE, on_color = primary_color)
   )
 }
 
@@ -533,6 +534,7 @@ metaAnalysisUI2 <- function(
 #' @param meta Data frame containing raw data and meta-analysis
 #' @param id_export_plot_btn ID for button to export plot. Default is `"export_plot_btn"`
 #' @returns Enter inside server function of shiny app
+#' @export
 metaAnalysisServer2 <- function(
     id,
     data,
