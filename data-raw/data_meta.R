@@ -102,6 +102,7 @@ meta <- meta %>%
       outcome == "GBS" ~ "Guillain-Barré syndrome",
       .default = outcome
     ),
+    age_at_vax = gsub("yrs", "years", age_at_vax, fixed = TRUE),
     domain = ifelse(outcome %in% c("CFS/ME", "Paralysis", "GBS"), "Safety", "Efficacy")
   ) %>%
   filter(
@@ -140,4 +141,5 @@ meta <- meta %>%
 usethis::use_data(meta, overwrite = TRUE)
 
 # Create csv file for v1 folder
+unlink("/Users/michaelabers/Desktop/R packages/HPV/inst/v1/df_shiny.csv")
 write_csv(meta, "df_shiny", directory = "/Users/michaelabers/Desktop/R packages/HPV/inst/v1")

@@ -2,13 +2,13 @@
 % Please edit documentation in R/plot_forest.R
 \name{plot_forest}
 \alias{plot_forest}
-\title{Forest plot}
+\title{Forest plot on linear x axis scale}
 \usage{
 plot_forest(
   df,
-  estimate,
-  lower,
-  upper,
+  estimate = "rr",
+  lower = "rr_lower",
+  upper = "rr_upper",
   y_var = NULL,
   grouping_var = NULL,
   ordering_var = NULL,
@@ -62,6 +62,7 @@ plot_forest(
   x_axis_include = NULL,
   cap = "both",
   data_limits = NULL,
+  show_x_axis = TRUE,
   ...
 )
 }
@@ -166,7 +167,9 @@ plot_forest(
 
 \item{data_limits}{x axis limits for error bars. Only changes plot appearance, not actually estimates/labels. Enter as length 2 numeric vector. Default is \code{NULL}, no limits applied}
 
-\item{...}{Arguments passed to \code{theme_vip}}
+\item{show_x_axis}{If \code{TRUE} (default), x axis is displayed. If \code{FALSE}, no scale is applied to x axis}
+
+\item{...}{Arguments passed to \code{theme_hpv}}
 
 \item{ci_sep}{Separator between lower and upper bound in 95\% CI labels. Enter as length 1 character vector. Default is \code{"-"}. Forest plots for manuscript used \code{" to "}}
 }
@@ -174,5 +177,5 @@ plot_forest(
 ggplot object
 }
 \description{
-Forest plot
+Forest plot on linear x axis scale
 }

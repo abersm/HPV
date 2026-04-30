@@ -1,6 +1,7 @@
 #' UI for meta-analysis module
 #'
-#' @param id Input id. Must match `id` entered in `metaAnalysisServer`
+#' @param id Input id. Must match `id` entered in `metaAnalysisServer2`
+#' @param data Data frame with all analysis
 #' @param sidebar_open If `TRUE` (default), sidebar is open by default
 #' @param sidebar_width Width of sidebar. Default is `"30%"`
 #' @param plot_resizable If `TRUE` (default), plot can be resized by draggling bottom right corner
@@ -10,14 +11,14 @@
 #' @param primary_color,secondary_color Primary and secondary color used for bootstrap theme. Default is `"#A63B86"` for `secondary_color`
 #' @param slider_color,switch_color Color for sliders and switches
 #' @param incrementor_button_color Color for incrementor button
-#' @param color_by_virus If `TRUE` (default), `plot_crosstable2` is used as default plot function in server. If `FALSE`, `plot_crosstable` is used as default plot function in server
 #' @param accordion_btn_border_color Color for accordion buttons
 #' @param accordion_btn_background_color_alpha Alpha filter for accordion buttons. Default is `0.1`
 #' @param slider_color Color for slider and switch
 #' @param id_export_plot_btn ID for export plot button. Default is `"export_plot_btn"`
 #' @returns Enter as input to UI
-metaAnalysisUI <- function(
+metaAnalysisUI2 <- function(
     id,
+    data,
     sidebar_open = FALSE,
     sidebar_width = "30%",
     plot_resizable = TRUE,
@@ -72,74 +73,6 @@ metaAnalysisUI <- function(
     step = 1
   )
 
-  # Plot buttons
-  ## Virus
-  virus_options <- popover_btn(
-    icon = shiny::icon("virus", verify_fa = FALSE),
-    title = "Select virus",
-    hover_text = "Virus",
-    shiny::selectInput(
-      inputId = ns("virus"),
-      label = NULL,
-      choices = c("COVID", "RSV", "Influenza"),
-      selected = "COVID"
-    )
-  )
-
-  ## Population
-  pop_options <- c("Pregnancy", "Infant/Child", "Infant", "Child", "Adult/Elder", "Adult", "Elder", "Immunocompromised")
-  names(pop_options) <- c("Pregnancy", "Infants/Children", "Infants", "Children", "All adults", "Younger adults", "Older adults", "Immunocomp.")
-  population_options <- popover_btn(
-    icon = shiny::icon("person", verify_fa = FALSE),
-    title = "Select population",
-    hover_text = "Population",
-    shiny::selectInput(
-      inputId = ns("population"),
-      label = NULL,
-      choices = pop_options,
-      selected = "Adult/Elder"
-    )
-  )
-
-  ## Outcome
-  outcome_options <- popover_btn(
-    icon = shiny::icon("hospital", verify_fa = FALSE),
-    title = "Select Outcome",
-    hover_text = "Outcome",
-    shiny::selectInput(
-      inputId = ns("outcome"),
-      label = NULL,
-      choices = c("Hospitalization", "Medically-attended infection", "ICU admission"),
-      selected = "Hospitalization"
-    )
-  )
-
-  ## Study design
-  design_options <- popover_btn(
-    icon = shiny::icon("magnifying-glass", verify_fa = FALSE),
-    title = "Select study design",
-    hover_text = "Study design",
-    shiny::selectInput(
-      inputId = ns("study_design"),
-      label = NULL,
-      choices = c("Case-control", "Cohort"),
-      selected = "Case-control"
-    )
-  )
-
-  ## ROB
-  rob_options <- popover_btn(
-    icon = shiny::icon("award", verify_fa = FALSE),
-    title = "Select risk of bias",
-    hover_text = "Risk of bias",
-    switchInput(
-      ns("rob"),
-      label = "Low risk of bias only",
-      on_color = primary_color,
-      value = FALSE
-    )
-  )
-
   # Plot export settings
   plot_width <- incrementorInput(
     inputId = ns("export_plot_width"),
@@ -192,7 +125,6 @@ metaAnalysisUI <- function(
     ),
     shiny::downloadButton(
       outputId = ns("export_plot"),
-      #class = "btn rounded-pill action-button",
       label = "Export plot"
     )
   )
@@ -240,22 +172,12 @@ metaAnalysisUI <- function(
 
   # Button group
   plot_btns <- shiny::div(
-    class = "btn-group btn-group",
-    role = "group",
-    style = "gap:2px;float:right;",
-    virus_options,
-    population_options,
-    outcome_options,
-    design_options,
-    rob_options
-  )
-  plot_btns <- shiny::div(
     class = "btn-toolbar justify-content-between",
     #class = "btn-toolbar",
     role = "toolbar",
     #interactive_switch,
-    export_btns,
-    plot_btns
+    export_btns
+    #plot_btns
   )
 
   # Plot resizer
@@ -477,10 +399,12 @@ metaAnalysisUI <- function(
   #plotly_output <- plotly::plotlyOutput(outputId = ns("plotly"), width = "100%", height = "100%")
 
   # Plot cards
-  plot_card <- function(x) {
+  card_title <- shiny::uiOutput(ns("analysis_title"))
+  plot_card <- function(x, ...) {
     bslib::card(
       style = "border-color:black;",
       bslib::card_header(plot_btns, style = "background-color:#E5E5E5;border-color:black;"),
+      card_title,
       bslib::card_body(
         shiny::div(
           id = ns("plot-container"),
@@ -490,7 +414,8 @@ metaAnalysisUI <- function(
           shiny::div(class = "resize-handle resize-horizontal"),
           shiny::div(class = "resize-handle resize-vertical"),
           shiny::div(class = "resize-handle resize-diagonal")
-        )
+        ),
+        ...
       )
     )
   }
@@ -504,12 +429,6 @@ metaAnalysisUI <- function(
     list(shiny::icon("table-list", verify_fa = FALSE), "Table of contents"),
     style = sprintf("background-color:%s;color:%s;", secondary_color, .clr_text(secondary_color))
   )
-  #meta_toc <- bslib::popover(
-  #  title = "Meta-analyses performed",
-  #  trigger = meta_toc,
-  #  placement = "right",
-  #  shiny::plotOutput(ns("plot_toc"))
-  #)
 
   # Modal window style
   css_modal <- shiny::tags$head(
@@ -547,6 +466,24 @@ metaAnalysisUI <- function(
     )
   )
 
+  # Analysis options
+  meta_options <- dplyr::arrange(data, outcome, follow_up, hpv_type, age_at_vax, study_design)
+  meta_options_names <- meta_options <- unique(meta_options$analysis_label)
+  meta_options_names <- gsub(" years at vaccination", "y", meta_options_names, fixed = TRUE)
+  meta_options_names <- gsub("≥ ", "≥", meta_options_names, fixed = TRUE)
+  meta_options_names <- gsub("months", "m", meta_options_names, fixed = TRUE)
+  meta_options_names <- gsub("Chronic fatigue syndrome/myalgic encephalomyelitis", "CFS/ME", meta_options_names, fixed = TRUE)
+  meta_options_names <- gsub("Cervical screening attendance", "Cervical screening", meta_options_names, fixed = TRUE)
+  meta_options_names <- gsub("self-controlled case series", "self-cntrl. series", meta_options_names, fixed = TRUE)
+  meta_options_names <- gsub("Guillain-Barré syndrome", "Guillain-Barré", meta_options_names, fixed = TRUE)
+  meta_options_names <- gsub("Persistent infection at 12 m with HPV 16/18", "Persistent (12 mo) HPV 16/18 infect.", meta_options_names, fixed = TRUE)
+  meta_options_names <- gsub("Persistent infection at 6 m with HPV 16/18", "Persistent (6 mo) HPV 16/18 infect.", meta_options_names, fixed = TRUE)
+  meta_options_names <- gsub("Invasive cervical cancer", "Cervical cancer", meta_options_names, fixed = TRUE)
+  meta_options_names <- gsub("cross-sectional", "cross-sect.", meta_options_names, fixed = TRUE)
+  meta_options_names <- gsub("Anogenital warts", "Anogen. warts", meta_options_names, fixed = TRUE)
+  meta_options <- as.list(c("TABLE OF CONTENTS", meta_options))
+  names(meta_options) <- c("TABLE OF CONTENTS", meta_options_names)
+
   # UI
   bslib::layout_sidebar(
     css_modal,
@@ -564,24 +501,30 @@ metaAnalysisUI <- function(
       width = sidebar_width,
       meta_toc,
       shiny::tag("hr", list(style = "border:0.5px dashed black;opacity:0.8;"), .noWS = NULL, .renderHook = NULL),
-      font_size_ui,
-      shiny::tag("hr", list(style = "border:0.5px dashed black;opacity:0.8;"), .noWS = NULL, .renderHook = NULL),
-      #switchInput(ns("show_heterogeneity"), label = shiny::tags$strong("Show heterogeneity", style = sprintf("color:%s;", primary_color)), value = FALSE, on_color = primary_color),
-      if (show_legend_switch) switchInput(ns("show_legend"), label = shiny::tags$strong("Show legend", style = sprintf("color:%s;", primary_color)), value = FALSE, on_color = primary_color)
+      font_size_ui
     ),
     #abers::debug_editorUI(id = ns("debug")),
-    plot_card(plot_output),
+    shiny::selectInput(
+      inputId = ns("analysis_selected"),
+      label = "Select meta-analysis",
+      choices = meta_options
+    ),
+    plot_card(
+      plot_output,
+      shiny::conditionalPanel(
+        condition = "input.show_heterogeneity === true",
+        shiny::uiOutput(ns("het_annot")),
+        ns = ns
+      )
+    ),
+    #plot_card(plot_output),
+    #shiny::conditionalPanel(
+    #  condition = "input.show_heterogeneity === true",
+    #  shiny::uiOutput(ns("het_annot")),
+    #  ns = ns
+    #),
+    #shiny::tag("hr", list(style = "border:0.5px solid black;opacity:0.8;"), .noWS = NULL, .renderHook = NULL),
     switchInput(ns("show_heterogeneity"), label = shiny::tags$strong("Show heterogeneity", style = sprintf("color:%s;", primary_color)), value = FALSE, on_color = primary_color)
-    # shiny::conditionalPanel(
-    #   condition = "input.make_plot_interactive === false",
-    #   plot_card(plot_output),
-    #   ns = ns
-    # ),
-    # shiny::conditionalPanel(
-    #   condition = "input.make_plot_interactive === true",
-    #   plot_card(plotly_output),
-    #   ns = ns
-    # )
   )
 }
 
@@ -590,7 +533,7 @@ metaAnalysisUI <- function(
 #' @param meta Data frame containing raw data and meta-analysis
 #' @param id_export_plot_btn ID for button to export plot. Default is `"export_plot_btn"`
 #' @returns Enter inside server function of shiny app
-metaAnalysisServer <- function(
+metaAnalysisServer2 <- function(
     id,
     data,
     plotly_toolbar_buttons = "toImage",
@@ -599,9 +542,29 @@ metaAnalysisServer <- function(
     stop("data must be a data frame", call. = FALSE)
   }
   #`%#%` <- function(x, y) if (is.null(x) || !is.numeric(x)) y else x
-  meta_options <- dplyr::distinct(data, domain, study_design, vax_product_analysis, outcome, hpv_type, age_at_vax, follow_up)
+  meta_options <- dplyr::distinct(data, study_design, outcome, follow_up, hpv_type, age_at_vax)
   meta_options$id <- rev(seq_len(nrow(meta_options)))
-  plot_meta_toc <- tidyr::pivot_longer(meta_options, cols = -"id")
+  plot_meta_toc <- tidyr::pivot_longer(meta_options, cols = -"id") |>
+    dplyr::mutate(
+      name = dplyr::case_when(
+        name == "study_design" ~ "Design",
+        name == "outcome" ~ "Outcome",
+        name == "age_at_vax" ~ "Age",
+        name == "follow_up" ~ "Follow up",
+        name == "hpv_type" ~ "HPV strain",
+        .default = name
+      ),
+      value = gsub("years", "y", value, fixed = TRUE),
+      value = gsub("months", "mo", value, fixed = TRUE),
+      value = gsub(" and/or ", "/", value, fixed = TRUE),
+      value = dplyr::case_when(
+        value == "Persistent infection" ~ "Persistent inf.",
+        value == "Cervical screening attendance" ~ "Cervical screen",
+        value == "Invasive cervical cancer" ~ "Cervical cancer",
+        value == "hpv_type" ~ "HPV strain",
+        .default = value
+      )
+    )
   blank <- ggplot2::element_blank()
   plot_meta_toc <- ggplot2::ggplot(plot_meta_toc, ggplot2::aes(x = name, y = id, label = value)) +
     geom_stripes(
@@ -624,36 +587,87 @@ metaAnalysisServer <- function(
   shiny::moduleServer(id, function(input, output, session) {
     ns <- session$ns
 
+    # Update plot card title
+    output$analysis_title <- shiny::renderUI({
+      bslib::card_title(input$analysis_selected)
+    })
+
     # Create plot
     plot_static <- shiny::reactive({
-      data_all <- prepare_meta_analysis_data(
-        data,
-        study_design = input$study_design,
-        age_at_vax = input$age_at_vax,
-        hpv_type = input$hpv_type,
-        outcome = input$outcome,
-        follow_up = input$follow_up
-      )
-      tryCatch({
-        plot_rr(
-          data_all,
-          virus = input$virus,
-          population = input$population,
-          outcome = input$outcome,
-          study_design = input$study_design,
-          low_rob = input$rob,
-          show_het = input$show_heterogeneity,
-          #show_legend = input$show_legend %||% FALSE,
-          #aspect_ratio = input$aspect_ratio %#% NULL,
-          base_size = input$base_size
+      shiny::req(input$analysis_selected)
+      analysis <- input$analysis_selected
+      if (analysis %in% data$analysis_label) {
+        #data_all <- prepare_meta_analysis_data(
+        #  data,
+        #  study_design = input$study_design,
+        #  age_at_vax = input$age_at_vax,
+        #  hpv_type = input$hpv_type,
+        #  outcome = input$outcome_long,
+        #  follow_up = input$follow_up
+        #)
+        data_all <- data[data$analysis_label == analysis, , drop = FALSE]
+        x_breaks <- if (min(data_all$rr_lower, na.rm = TRUE) < 0.05) {
+          c(0.01, 0.1, 0.5, 1, 2, 5)
+        } else {
+          c(0.05, 0.2, 0.5, 1, 2, 5)
+        }
+        if (max(data_all$rr_upper, na.rm = TRUE) > 5) {
+          x_breaks <- c(setdiff(x_breaks, 2), 10)
+        }
+        if (max(data_all$rr_upper, na.rm = TRUE) > 10) {
+          x_breaks <- c(x_breaks, 100)
+        }
+        tryCatch({
+          fp <- plot_rr(
+            data_all,
+            #virus = input$virus,
+            #study_design = input$study_design,
+            #outcome = input$outcome_long,
+            #follow_up = input$follow_up,
+            #hpv_type = input$hpv_type,
+            #age_at_vax = input$age_at_vax,
+            #show_het = input$show_heterogeneity,
+            title = "",
+            x_axis_scale = "log10",
+            x_axis_breaks = x_breaks,
+            x_axis_labels = identity,
+            #aspect_ratio = input$aspect_ratio %#% NULL,
+            base_size = input$base_size
+          )
+          add_forest_direction_annotation(fp)
+        }, error = function(e) plot_meta_toc)
+      } else {
+        plot_meta_toc
+      }
+    })
+
+    output$het_annot <- shiny::renderUI({
+      shiny::req(input$analysis_selected)
+      analysis <- input$analysis_selected
+      if (input$show_heterogeneity && analysis %in% data$analysis_label) {
+        data_all <- data[data$is_meta == 1 & data$analysis_label == analysis, , drop = FALSE]
+        p <- data_all$p
+        if (!startsWith(p, "<")) {
+          p <- paste("=", p)
+        }
+        tau_sq <- data_all$tau_sq
+        if (!startsWith(tau_sq, "<")) {
+          tau_sq <- paste("=", tau_sq)
+        }
+        shiny::div(
+          shiny::tags$p(
+            shiny::tags$b("Heterogeneity:"),
+            shiny::tags$br(),
+            shiny::tags$i("I"), shiny::tags$sup("2"), paste0(" = ", round_up(data_all$i_sq, 0), "%"),
+            shiny::tags$br(),
+            shiny::tags$i("τ"), shiny::tags$sup("2"), paste0(" ", tau_sq),
+            shiny::tags$br(),
+            shiny::tags$i("P"), paste0(" ", p)
+          )
         )
-      }, error = function(e) {
-        idx <- match(input$population, c("Pregnancy", "Infant", "Child", "Infant/Child", "Adult", "Elder", "Adult/Elder", "Immunocompromised"), nomatch = 0L)
-        plot_meta_toc +
-          #ggplot2::ggplot() + ggplot2::theme_minimal() +
-          ggplot2::theme(title = ggplot2::element_text(size = 10, color = "#A63B86", vjust = 0.5, hjust = 0)) +
-          ggplot2::ggtitle(sprintf("Insufficient number of studies to perform a meta-analysis for the specified inputs:\n\nVirus = %s\nPopulation = %s\nOutcome = %s\nStudy design = %s\n\nSee below for a list of meta-analyses performed.\n", input$virus, c("Pregnancy", "Infants", "Children", "Infants/children", "Younger adults", "Older adults", "All adults", "Immunocompromised")[idx], input$outcome, input$study_design))
-      })
+      } else {
+        NULL
+      }
     })
 
     # Show table of contents

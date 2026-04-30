@@ -1,0 +1,12 @@
+name: hpv_v1
+title: hpv_v1
+username: cidrap
+account: cidrap
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 17262936
+bundleId:
+url: https://cidrap.shinyapps.io/hpv_v1/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE

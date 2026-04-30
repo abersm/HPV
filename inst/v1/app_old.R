@@ -198,13 +198,11 @@ js_popover <- shiny::tags$head(
 
 # Header
 cidrap_logo <- shiny::tags$img(src = "cidrap_logo.svg", height = "75px", style = "padding-top:10px;padding-bottom:10px;")
-vip_text <- shiny::tags$h1("Human Papillomavirus Vaccination", style = sprintf("color:%s;vertical-align:middle;padding-top:10px;padding-bottom:10px;font-size:30px;", "#85031A"))
+vip_text <- shiny::tags$h1("Human Papillomavirus (HPV) Vaccination", style = sprintf("color:%s;vertical-align:middle;padding-top:10px;padding-bottom:10px;font-size:36px;", secondary_color))
 vip_logo <- shiny::tags$img(src = "vip_logo_white_bg.svg", height = "100px", style = "padding-top:10px;padding-bottom:10px;")
 header <- shiny::headerPanel(
   shiny::fluidRow(
-    shiny::column(cidrap_logo, width = 2),
-    shiny::column(vip_text, width = 8, align = "center"),
-    shiny::column(vip_logo, width = 2, align = "right"),
+    shiny::column(cidrap_logo, width = 6), shiny::column(vip_logo, width = 6, align = "right"),
     style = sprintf("background:%s;border:solid 2px %s;padding:2px;align-items:center;border-radius:10px;margin:0.1px;margin-top:", header_color, header_border_color)
   ),
   windowTitle = "Vaccine Integrity Project"
@@ -223,6 +221,7 @@ reset_btn <- shiny::tags$button(
 )
 reset_btn <- shiny::tagList(shiny::tagAppendAttributes(reset_btn, title = shiny::HTML("Reset data"), `data-bs-toggle` = "tooltip", `data-bs-html` = "true", `data-bs-placement` = "auto"))
 
+# Study design
 design_options <- HPV::popover_btn(
   icon = shiny::icon("magnifying-glass"),
   title = "Select study design",
@@ -233,6 +232,47 @@ design_options <- HPV::popover_btn(
     choices = c("RCT", "Cohort", "Cross-sectional", "Self-controlled case series")
   )
 )
+
+if (FALSE) {
+  # Vaccine product options
+  vax_options <- HPV::popover_btn(
+    icon = shiny::icon("syringe"),
+    title = "Select vaccine product",
+    hover_text = "Vaccine product",
+    shiny::selectInput(
+      inputId = "vax_product",
+      label = NULL,
+      choices = c("All HPV vaccines", "Cervarix")
+    )
+  )
+
+  # Population
+  population_options <- HPV::popover_btn(
+    icon = shiny::icon("person"),
+    title = "Select population",
+    hover_text = "Population",
+    shiny::checkboxGroupInput(
+      inputId = "studies_population",
+      label = NULL,
+      choiceNames = c("Pregnancy", "Pediatrics", "Adults", "Immunocompromised"),
+      choiceValues = c("Pregnancy", "Pediatrics", "Adults", "Immunocomp."),
+      selected = c("Pregnancy", "Pediatrics", "Adults", "Immunocomp.")
+    )
+  )
+
+  # ROB
+  rob_options <- HPV::popover_btn(
+    icon = shiny::icon("award"),
+    title = "Select risk of bias",
+    hover_text = "Risk of bias",
+    shiny::checkboxGroupInput(
+      inputId = "rob",
+      label = NULL,
+      choices = c("Low", "Moderate", "High"),
+      selected = c("Low", "Moderate", "High")
+    )
+  )
+}
 
 # Button group
 plot_btns <- shiny::div(
@@ -303,7 +343,7 @@ ui <- function(request) {
 
       # Efficacy tab
       shiny::tabPanel(
-        title = "Vaccine efficacy",
+        title = "Efficacy",
         # Code from https://icons.getbootstrap.com/icons/bar-chart-steps/
         icon = shiny::tags$svg(
           xmlns = "http://www.w3.org/2000/svg",
@@ -315,25 +355,37 @@ ui <- function(request) {
           shiny::tags$path(d = "M.5 0a.5.5 0 0 1 .5.5v15a.5.5 0 0 1-1 0V.5A.5.5 0 0 1 .5 0M2 1.5a.5.5 0 0 1 .5-.5h4a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-4a.5.5 0 0 1-.5-.5zm2 4a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5zm2 4a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-6a.5.5 0 0 1-.5-.5zm2 4a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-7a.5.5 0 0 1-.5-.5z")
         ),
         style = tab_style,
-        metaAnalysisUI2("efficacy", data = efficacy)
+        metaAnalysisUI("meta")
       ),
 
       # Safety tab
       shiny::tabPanel(
-        title = "Vaccine safety",
+        title = "Safety",
         icon = shiny::icon("warning"),
         style = tab_style,
-        metaAnalysisUI2("safety", data = safety)
+        metaAnalysisUI("safety")
       ),
 
       # Studies tab -------------------------------------------------------------
       shiny::tabPanel(
-        title = "Data",
+        title = "Studies",
         icon = shiny::icon("book", verfiy_fa = FALSE),
         style = tab_style,
         bslib::card(
-          style = "border-color:black;",
-          DT::DTOutput("table_studies")
+          bslib::layout_columns(
+            bslib::card(
+              style = "border-color:black;",
+              bslib::card_header(
+                plot_btns,
+                style = "background-color:#E5E5E5;border-color:black;"
+              ),
+              shiny::plotOutput(outputId = "plot_studies", width = "340px", height = "400px", click = "plot_studies_click")
+            ),
+            bslib::card(
+              style = "border-color:black;",
+              DT::DTOutput("table_studies")
+            )
+          )
         )
       )
     )
@@ -345,6 +397,25 @@ ui <- function(request) {
 server <- function(input, output, session) {
   plot_data <- shiny::reactiveVal(data_studies)
   table_data <- shiny::reactiveVal(data_studies)
+  shiny::observeEvent(input$data_reset, {
+    shiny::updateCheckboxGroupInput(inputId = "studies_virus", selected = c("COVID", "RSV", "Influenza"))
+    shiny::updateCheckboxGroupInput(inputId = "studies_population", selected = c("Pregnancy", "Pediatrics", "Adults", "Immunocomp."))
+    shiny::updateCheckboxGroupInput(inputId = "rob", selected = c("Low", "Moderate", "High"))
+    shiny::updateCheckboxGroupInput(inputId = "study_design", selected = c("RCT", "Case-control", "Cohort", "Observational - other"))
+    plot_data(data_studies)
+    table_data(data_studies)
+  })
+
+  # Update both plot data and table data
+  shiny::observeEvent(c(input$studies_virus, input$studies_population, input$rob, input$study_design), {
+    viruses <- input$studies_virus %||% c("COVID", "RSV", "Influenza")
+    populations <- input$studies_population %||% c("Pregnancy", "Pediatrics", "Adults", "Immunocomp.")
+    design <- input$study_design %||% c("RCT", "Case-control", "Cohort", "Observational - other")
+    idx <- data_studies$virus %in% viruses & data_studies$population %in% populations & data_studies$study_design %in% design
+    tmp_data <- data_studies[idx, ]
+    plot_data(tmp_data)
+    table_data(tmp_data)
+  })
 
   # Raw data table
   output$table_studies <- DT::renderDataTable({
@@ -397,10 +468,10 @@ server <- function(input, output, session) {
   }, server = FALSE)
 
   # Efficacy tab
-  plot_efficacy <- metaAnalysisServer2("efficacy", data = efficacy)
+  plot_efficacy <- metaAnalysisServer("efficacy", data = data)
 
   # Safety tab
-  plot_safety <- metaAnalysisServer2("safety", data = safety)
+  plot_safety <- metaAnalysisServer("efficacy", data = data)
 }
 
 shiny::shinyApp(ui, server, enableBookmarking = "url")

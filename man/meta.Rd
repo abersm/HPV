@@ -14,6 +14,6 @@ Data frame
 meta
 }
 \description{
-See data_final.R file, then run usethis::use_data(meta, overwrite = TRUE)
+See data_meta.R file in data-raw folder
 }
 \keyword{datasets}

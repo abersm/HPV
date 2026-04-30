@@ -1,35 +1,3 @@
-#' Prepare meta-analysis data for plotting or export
-#'
-#' @noRd
-prepare_meta_analysis_data <- function(
-    x,
-    study_design = NULL,
-    age_at_vax = NULL,
-    hpv_type = NULL,
-    outcome = NULL,
-    follow_up = NULL,
-    ...) {
-  study_design <- study_design %||% c("RCT", "Cohort", "Cross-sectional", "Self-controlled case series")
-  age_at_vax <- age_at_vax %||% c("Any", "≤ 16 yrs", "15-25 yrs", "≥ 25 yrs")
-  outcome <- outcome %||% c("Anogenital warts", "Cervical screening attendance", "CFS/ME", "CIN2+", "CIN3", "CIN3+", "GBS", "Invasive cervical cancer", "Paralysis", "Persistent infection")
-  idx <- x$study_design %in% study_design
-  idx <- idx & x$outcome %in% outcome
-  idx <- idx & x$age_at_vax %in% age_at_vax
-  if (!is.null(hpv_type)) {
-    #c("Any", "16 and/or 18", "Vaccine-matched")
-    idx <- idx & x$hpv_type %in% hpv_type
-  }
-  if (!is.null(follow_up)) {
-    #c("Any", "6 months", "12 months", "Short-term", "Medium-term", "Long-term")
-    idx <- idx & x$follow_up %in% follow_up
-  }
-  x <- x[idx, , drop = FALSE]
-  if (nrow(x) == 0L || length(unique(x$id)) != 1L) return(NULL)
-  x$tau_method <- "DerSimonian-Laird"
-  x$model_type <- "Random-effects"
-  x
-}
-
 #' Forrest plot
 #'
 #' @noRd
@@ -93,21 +61,23 @@ plot_rr <- function(
     point_size = point_size,
     ...
   )
-  cols <- c("study_design", "outcome", "age_at_vax", "follow_up", "hpv_type")
-  prefix <- c("Study design", "Outcome", "Age at vaccination", "Follow up duration", "HPV type")
-  labels <- lapply(
-    seq_along(cols),
-    function(i) {
-      vals <- unique(.subset2(x, cols[i]))
-      if (length(vals) != 1L || anyNA(vals)) return(NULL)
-      paste(prefix[i], vals, sep = ": ")
+  if (is.null(title)) {
+    cols <- c("study_design", "outcome", "age_at_vax", "follow_up", "hpv_type")
+    prefix <- c("Study design", "Outcome", "Age at vaccination", "Follow up duration", "HPV type")
+    labels <- lapply(
+      seq_along(cols),
+      function(i) {
+        vals <- unique(.subset2(x, cols[i]))
+        if (length(vals) != 1L || anyNA(vals)) return(NULL)
+        paste(prefix[i], vals, sep = ": ")
+      }
+    )
+    labels <- labels[lengths(labels, use.names = FALSE) == 1L]
+    if (length(labels) != 0L) {
+      title <- paste(labels, sep = "\n")
+    } else {
+      title <- NULL
     }
-  )
-  labels <- labels[lengths(labels, use.names = FALSE) == 1L]
-  if (length(labels) != 0L) {
-    title <- paste(labels, sep = "\n")
-  } else {
-    title <- NULL
   }
   out <- out + ggplot2::ggtitle(title)
   out <- add_column_table(
@@ -163,7 +133,7 @@ plot_rr <- function(
       }
       plot
     }
-    out <- .add_het_anno(out)
+    out <- .add_het_anno(out, x)
   }
   out
 }

@@ -6,6 +6,7 @@
 \usage{
 metaAnalysisUI(
   id,
+  data,
   sidebar_open = FALSE,
   sidebar_width = "30\%",
   plot_resizable = TRUE,
@@ -22,6 +23,8 @@ metaAnalysisUI(
 }
 \arguments{
 \item{id}{Input id. Must match \code{id} entered in \code{metaAnalysisServer}}
+
+\item{data}{Data frame with all analysis}
 
 \item{sidebar_open}{If \code{TRUE} (default), sidebar is open by default}
 
@@ -42,8 +45,6 @@ metaAnalysisUI(
 \item{incrementor_button_color}{Color for incrementor button}
 
 \item{id_export_plot_btn}{ID for export plot button. Default is \code{"export_plot_btn"}}
-
-\item{color_by_virus}{If \code{TRUE} (default), \code{plot_crosstable2} is used as default plot function in server. If \code{FALSE}, \code{plot_crosstable} is used as default plot function in server}
 
 \item{accordion_btn_border_color}{Color for accordion buttons}
 

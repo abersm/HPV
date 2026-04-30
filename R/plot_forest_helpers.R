@@ -1,3 +1,32 @@
+#' Prepare meta-analysis data for plotting or export
+#'
+#' @noRd
+prepare_meta_analysis_data <- function(
+    x,
+    study_design = NULL,
+    age_at_vax = NULL,
+    hpv_type = NULL,
+    outcome = NULL,
+    follow_up = NULL,
+    ...) {
+  study_design <- study_design %||% unique(x$study_design)
+  outcome <- outcome %||% unique(x$outcome_long)
+  idx <- x$study_design %in% study_design
+  idx <- idx & x$outcome %in% outcome
+  idx <- idx & x$age_at_vax %in% age_at_vax
+  if (!is.null(hpv_type)) {
+    idx <- idx & x$hpv_type %in% hpv_type
+  }
+  if (!is.null(follow_up)) {
+    idx <- idx & x$follow_up %in% follow_up
+  }
+  x <- x[idx, , drop = FALSE]
+  if (nrow(x) == 0L || length(unique(x$id)) != 1L) return(NULL)
+  x$tau_method <- "DerSimonian-Laird"
+  x$model_type <- "Random-effects"
+  x
+}
+
 #' Add x axis scale to forest plot
 #'
 #' @noRd
@@ -158,10 +187,11 @@ reorder_y_axis <- function(plot, ..., .y = c(".y_var", ".study_label"), .first =
   }
   tau2_entered <- !is.null(tau2)
   if (tau2_entered) {
-    tau2 <- f(round_up(tau2, tau_digits), tau2_prefix)
+    #tau2 <- round_up(tau2, tau_digits)
+    tau2 <- f(tau2, tau2_prefix)
   }
   if (!is.null(p)) {
-    p <- .format_p_value(p)
+    #p <- .format_p_value(p)
     idx <- grepl("<", p, fixed = TRUE)
     p <- f(gsub("[^\\.0-9]", "", p), p_prefix)
     p[idx] <- gsub("`=`", "`<`", p[idx], fixed = TRUE)
