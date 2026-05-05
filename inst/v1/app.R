@@ -15,8 +15,10 @@ data_studies <- utils::read.csv(system.file("v1", "df_shiny.csv", package = "HPV
 rownames(data_studies) <- NULL
 
 # Create clickable link to article
-#data_studies$article <- paste0('<a href="', utils::URLdecode(data_studies$link), '" target="_blank">', data_studies$article, "</a>")
-#data_studies$article <- paste0('<a href="', data_studies$link, '" target="_blank">', data_studies$article, "</a>")
+idx <- data_studies$is_meta == 0
+data_studies$article <- NA_character_
+data_studies$article[idx] <- paste0('<a href="', data_studies$link[idx], '" target="_blank">', data_studies$study[idx], "</a>")
+remove(idx)
 
 # Efficacy data
 efficacy <- data_studies[data_studies$domain == "Efficacy", , drop = FALSE]
@@ -349,7 +351,9 @@ server <- function(input, output, session) {
   # Raw data table
   output$table_studies <- DT::renderDataTable({
     tmp <- table_data()
-    tmp <- tmp[unique(c("study", names(tmp)))]
+    #tmp <- tmp[unique(c("study", names(tmp)))]
+    # Next line is new as of 5/4/26 (and line above removed)
+    tmp <- tmp[unique(intersect(c("article", names(tmp)), names(tmp)))]
     #names(tmp)[names(tmp) == "rob"] <- "Risk of bias"
     out <- DT::datatable(
       tmp,

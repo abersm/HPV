@@ -137,6 +137,12 @@ meta <- meta %>%
     footnote = footnote_details
   )
 
+# Add link column
+pmid_doi <- read_excel("hpv_doi_pmid")
+pmid_doi$doi <- paste0("https://doi.org/", pmid_doi$doi)
+pmid_doi$link <- paste0("https://pubmed.ncbi.nlm.nih.gov/", pmid_doi$pmid)
+meta <- left_join(meta, pmid_doi, by = "study_original")
+
 # Export data
 usethis::use_data(meta, overwrite = TRUE)
 

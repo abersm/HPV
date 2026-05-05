@@ -111,14 +111,14 @@ rct <- rct$all
 
 # Clean RCT data
 rct <- rct %>%
-  dplyr::filter(problem == 0 | is.na(problem)) %>%
+  #dplyr::filter(problem == 0 | is.na(problem)) %>%
   dplyr::mutate(
     study_design = "RCT",
     is_rct = 1L,
     weight = Weight
   )
 cols <- c(
-  "study_design", "is_rct",
+  "study_design", "is_rct", "id",
   "table_id", "tablenumstrat", "outcome_label", "comparison",
   "study", "is_meta", "vip_update",
   "n_studies",
@@ -131,7 +131,7 @@ cols <- c(
 )
 
 setdiff(names(rct), cols)
-rct <- rct[cols]
+rct <- rct[intersect(cols, names(rct))]
 
 # Clean observational data
 obs <- obs %>%
@@ -140,7 +140,7 @@ obs <- obs %>%
     is_rct = 0L
   )
 cols <- c(
-  "study_design", "is_rct",
+  "study_design", "is_rct", "id",
   "table_id", "tablenumstrat", "outcome_label", "comparison",
   "study", "is_meta", "vip_update", "footnote", "footnote_details",
   "n_studies",
@@ -152,8 +152,7 @@ cols <- c(
   "tau_sq", "chi_sq", "i_sq", "df", "p", "weight"
 )
 setdiff(names(obs), cols)
-
-obs <- obs[cols]
+obs <- obs[intersect(cols, names(obs))]
 
 # Combine RCT and observational
 Setdiff_any(names(obs), names(rct))

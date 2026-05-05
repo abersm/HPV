@@ -5,7 +5,7 @@ account: cidrap
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 17262936
-bundleId: 11927333
+bundleId: 11927353
 url: https://cidrap.shinyapps.io/hpv_v1/
 version: 1
 asMultiple: FALSE
