@@ -18,6 +18,7 @@ rownames(data_studies) <- NULL
 idx <- data_studies$is_meta == 0
 data_studies$article <- NA_character_
 data_studies$article[idx] <- paste0('<a href="', data_studies$link[idx], '" target="_blank">', data_studies$study[idx], "</a>")
+data_studies$article[!idx] <- "Pooled"
 remove(idx)
 
 # Efficacy data
