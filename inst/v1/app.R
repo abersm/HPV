@@ -202,7 +202,9 @@ js_popover <- shiny::tags$head(
 # Header
 cidrap_logo <- shiny::tags$img(src = "cidrap_logo.svg", height = "75px", style = "padding-top:10px;padding-bottom:10px;")
 vip_text <- shiny::tags$h1("Human Papillomavirus Vaccination", style = sprintf("color:%s;vertical-align:middle;padding-top:10px;padding-bottom:10px;font-size:30px;", "#85031A"))
-vip_logo <- shiny::tags$img(src = "vip_logo_white_bg.svg", height = "100px", style = "padding-top:10px;padding-bottom:10px;")
+vip_logo <- shiny::tags$img(src = "vip_logo_no_bg.png", height = "100px", style = "padding-top:10px;padding-bottom:10px;max-width:100%;height:auto;")
+#vip_logo <- shiny::tags$img(src = "vip_logo.jpg", height = "70px", style = "padding-top:10px;padding-bottom:10px;")
+#vip_logo <- shiny::tags$img(src = "vip_logo_white_bg.svg", height = "100px", style = "padding-top:10px;padding-bottom:10px;")
 header <- shiny::headerPanel(
   shiny::fluidRow(
     shiny::column(cidrap_logo, width = 2),
